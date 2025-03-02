@@ -42,7 +42,7 @@ func main() {
 	r := gin.Default()
 	// Update CORS configuration
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://your-frontend-domain.com"},
+		AllowOrigins:     []string{"https://neuralnetworth.pages.dev/stocks", "https://neuralnetworth.pages.dev", "http://localhost:3000", "http://localhost:8080"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
