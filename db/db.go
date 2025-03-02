@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -19,21 +18,31 @@ func ConnectDB() {
 		log.Fatal("MONGODB_URI not set")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Create client options with proper TLS settings
+	clientOptions := options.Client().
+		ApplyURI(uri).
+		SetServerAPIOptions(options.ServerAPI(options.ServerAPIVersion1)).
+		SetTLSConfig(nil) // This uses the system's root CA certificates
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	// Connect to MongoDB
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatalf("MongoDB connection failed: %v", err)
 	}
 
-	// test connection
-	err = client.Ping(ctx, nil)
+	// Test connection
+	pingCtx, pingCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer pingCancel()
+
+	err = client.Ping(pingCtx, nil)
 	if err != nil {
 		log.Fatalf("MongoDB ping failed: %v", err)
 	}
 
-	fmt.Println("Connected to MongoDB!")
+	log.Println("Connected to MongoDB!")
 	Client = client
 }
 

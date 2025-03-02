@@ -95,9 +95,9 @@ func main() {
 	if port == "" {
 		port = "5001"
 	}
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+	// Add this to your Gin routes instead of using http.HandleFunc
+	r.GET("/health", func(c *gin.Context) {
+		c.String(http.StatusOK, "OK")
 	})
 	log.Println("Server running on port", port)
 	r.Run("0.0.0.0:" + port)
