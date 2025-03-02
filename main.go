@@ -93,7 +93,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "5001"
+		port = "8080"
 	}
 	// Add this to your Gin routes instead of using http.HandleFunc
 	r.GET("/health", func(c *gin.Context) {

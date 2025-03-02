@@ -1,29 +1,32 @@
 # Stage 1: Build the Go application
-ARG GO_VERSION=1
-FROM golang:${GO_VERSION}-bookworm as builder
-WORKDIR /usr/src/app
+FROM golang:1.20-alpine AS builder
 
-# Copy and download dependencies
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy go.mod and go.sum files
 COPY go.mod go.sum ./
-RUN go mod download && go mod verify
 
-# Copy the source code
+# Download dependencies
+RUN go mod download
+
+# Copy the rest of your application code
 COPY . .
 
-# Build the Go application
-RUN go build -v -o /run-app .
+# Build the application
+RUN go build -o main .
 
-# Stage 2: Prepare the runtime environment
-FROM debian:bookworm
+# Stage 2: Create the final lightweight image
+FROM alpine:latest
 
-# Install ca-certificates
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install CA certificates for HTTPS
+RUN apk update && apk add --no-cache ca-certificates
 
-# Copy the built application from the builder stage
-COPY --from=builder /run-app /usr/local/bin/
+# Copy the built binary from the builder
+COPY --from=builder /app/main /main
 
-# Expose the port your application listens on (If needed)
+# Expose port 8080
 EXPOSE 5001
 
-# Command to run your application
-CMD ["run-app"]
+# Command to run the executable
+CMD ["/main"]
