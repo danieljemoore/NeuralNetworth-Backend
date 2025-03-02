@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -39,6 +40,15 @@ func main() {
 
 	// Initialize routes
 	r := gin.Default()
+	// Update CORS configuration
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"https://your-frontend-domain.com"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	r.GET("/ws", func(c *gin.Context) {
 		websocket.ServeWs(hub, c.Writer, c.Request)
 	})
