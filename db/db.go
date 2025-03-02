@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
 	"os"
 	"time"
@@ -18,32 +19,41 @@ func ConnectDB() {
 		log.Fatal("MONGODB_URI not set")
 	}
 
-	// Create client options with proper TLS settings
+	// Set up MongoDB client options with TLS configuration
+	tlsConfig := &tls.Config{
+		// For MongoDB Atlas, we need to use the system's root CA certificates
+		// If that doesn't work, you can try with InsecureSkipVerify: true
+		// but that's not recommended for production
+		MinVersion: tls.VersionTLS12,
+	}
+
 	clientOptions := options.Client().
 		ApplyURI(uri).
+		SetTLSConfig(tlsConfig).
 		SetServerAPIOptions(options.ServerAPI(options.ServerAPIVersion1)).
-		SetTLSConfig(nil) // This uses the system's root CA certificates
+		SetTimeout(30 * time.Second).
+		SetConnectTimeout(30 * time.Second)
 
+	// Connect with longer timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Connect to MongoDB
-	client, err := mongo.Connect(ctx, clientOptions)
+	var err error
+	Client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatalf("MongoDB connection failed: %v", err)
 	}
 
-	// Test connection
-	pingCtx, pingCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Test connection with longer timeout
+	pingCtx, pingCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer pingCancel()
 
-	err = client.Ping(pingCtx, nil)
+	err = Client.Ping(pingCtx, nil)
 	if err != nil {
 		log.Fatalf("MongoDB ping failed: %v", err)
 	}
 
 	log.Println("Connected to MongoDB!")
-	Client = client
 }
 
 func GetDB() *mongo.Database {
