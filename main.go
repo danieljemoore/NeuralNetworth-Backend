@@ -42,10 +42,11 @@ func main() {
 	r := gin.Default()
 	// Update CORS configuration
 	r.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders: []string{"Content-Length", "Access-Control-Allow-Origin",
+			"Access-Control-Allow-Headers", "Access-Control-Allow-Methods"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
