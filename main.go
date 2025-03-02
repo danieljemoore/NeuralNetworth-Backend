@@ -100,5 +100,5 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 	log.Println("Server running on port", port)
-	r.Run(":" + port)
+	r.Run("0.0.0.0:" + port)
 }
