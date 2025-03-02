@@ -17,18 +17,19 @@ type Client struct {
 }
 
 type Hub struct {
-	Clients    map[*Client]bool
-	Broadcast  chan WSMessage
-	Register   chan *Client
-	Unregister chan *Client
-	Mutex      sync.Mutex
+	Clients      map[*Client]bool
+	Broadcast    chan WSMessage
+	Register     chan *Client
+	RoundManager *RoundManager
+	Unregister   chan *Client
+	Mutex        sync.Mutex
 }
 
 // NewHub initializes and returns a new Hub
 func NewHub() *Hub {
 	return &Hub{
 		Clients:    make(map[*Client]bool),
-		Broadcast:  make(chan WSMessage),
+		Broadcast:  make(chan WSMessage, 256),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 	}

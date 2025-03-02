@@ -365,7 +365,7 @@ func GetTradesHandlerV2() gin.HandlerFunc {
 
 // GetCompany fetches a company by ticker
 func GetCompany(ctx context.Context, ticker string, company *models.Company) error {
-	return companyCollection.FindOne(ctx, bson.M{"ticker": ticker}).Decode(company)
+	return CompanyCollection.FindOne(ctx, bson.M{"ticker": ticker}).Decode(company)
 }
 
 // Additional functions like DeleteTrade, UpdateTrade can be implemented similarly with consistent WebSocket messaging

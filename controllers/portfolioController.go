@@ -4,7 +4,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"midnight-trader/models"
 	"net/http"
 	"time"
@@ -12,34 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-// MongoDB collections
-var (
-	portfolioCollection *mongo.Collection
-)
-
-// Initialize MongoDB collections
-func SetPortfolioCollection(db *mongo.Database) {
-	portfolioCollection = db.Collection("portfolios")
-
-	// Create a unique index on the "player" field
-	indexModel := mongo.IndexModel{
-		Keys:    bson.M{"player": 1}, // Index on "player" field, ascending
-		Options: options.Index().SetUnique(true),
-	}
-	_, err := portfolioCollection.Indexes().CreateOne(context.TODO(), indexModel)
-	if err != nil {
-		log.Fatalf("Failed to create unique index on player field: %v", err)
-	}
-}
 
 // CreatePortfolio creates a new portfolio for a player if it doesn't exist.
 func CreatePortfolio(ctx context.Context, player string) (*models.Portfolio, error) {
 	// Check if a portfolio already exists for the player
 	var existing models.Portfolio
-	err := portfolioCollection.FindOne(ctx, bson.M{"player": player}).Decode(&existing)
+	err := PortfolioCollection.FindOne(ctx, bson.M{"player": player}).Decode(&existing)
 	if err == nil {
 		return nil, fmt.Errorf("portfolio already exists for player %s", player)
 	}
@@ -53,7 +31,7 @@ func CreatePortfolio(ctx context.Context, player string) (*models.Portfolio, err
 		Funds:     10000.0,
 		Companies: make(map[string]int),
 	}
-	_, err = portfolioCollection.InsertOne(ctx, portfolio)
+	_, err = PortfolioCollection.InsertOne(ctx, portfolio)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new portfolio: %v", err)
 	}
@@ -99,7 +77,7 @@ func GetPortfolio(ctx context.Context, player string) (*models.Portfolio, bool, 
 	var portfolio models.Portfolio
 	// Attempt to find the existing portfolio
 	filter := bson.M{"player": player}
-	err := portfolioCollection.FindOne(ctx, filter).Decode(&portfolio)
+	err := PortfolioCollection.FindOne(ctx, filter).Decode(&portfolio)
 	if err == nil {
 		// Portfolio exists
 		return &portfolio, false, nil
@@ -114,7 +92,7 @@ func GetPortfolio(ctx context.Context, player string) (*models.Portfolio, bool, 
 		Funds:     10000.0,
 		Companies: make(map[string]int),
 	}
-	_, err = portfolioCollection.InsertOne(ctx, portfolio)
+	_, err = PortfolioCollection.InsertOne(ctx, portfolio)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to create new portfolio: %v", err)
 	}
@@ -157,7 +135,7 @@ func GetPortfolioHandler(hub *models.Hub) gin.HandlerFunc {
 // GetPortfolios retrieves all portfolios.
 func GetPortfolios(ctx context.Context) ([]models.Portfolio, error) {
 	var portfolios []models.Portfolio
-	cursor, err := portfolioCollection.Find(ctx, bson.M{})
+	cursor, err := PortfolioCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch portfolios: %v", err)
 	}
@@ -197,7 +175,7 @@ func GetPortfoliosHandler() gin.HandlerFunc {
 // SavePortfolio updates an existing portfolio in the database.
 func SavePortfolio(ctx context.Context, portfolio *models.Portfolio) error {
 	filter := bson.M{"player": portfolio.Player}
-	_, err := portfolioCollection.ReplaceOne(ctx, filter, portfolio)
+	_, err := PortfolioCollection.ReplaceOne(ctx, filter, portfolio)
 	if err != nil {
 		return fmt.Errorf("failed to save portfolio: %v", err)
 	}
@@ -207,7 +185,7 @@ func SavePortfolio(ctx context.Context, portfolio *models.Portfolio) error {
 // DeletePortfolio removes a player's portfolio from the database.
 func DeletePortfolio(ctx context.Context, player string) error {
 	filter := bson.M{"player": player}
-	_, err := portfolioCollection.DeleteOne(ctx, filter)
+	_, err := PortfolioCollection.DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("failed to delete portfolio: %v", err)
 	}

@@ -7,7 +7,9 @@ import (
 	"midnight-trader/models"
 	"midnight-trader/routes"
 	"midnight-trader/websocket"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -40,6 +42,12 @@ func main() {
 	r.GET("/ws", func(c *gin.Context) {
 		websocket.ServeWs(hub, c.Writer, c.Request)
 	})
+	// Initialize RoundManager and assign to global for access in controllers.
+	roundManager := controllers.NewRoundManager(hub, 30*time.Second, 5) // Example: 30-second rounds, total 5 rounds
+	controllers.CurrentRoundManager = roundManager
+	// Initialize the RoundController
+	roundController := controllers.NewRoundController(roundManager, hub)
+
 	routes.WebSocketRoutes(r)
 	routes.CompanyRoutes(r)
 	api := r.Group("/api")
@@ -58,10 +66,30 @@ func main() {
 		api.GET("/trades", controllers.GetTradesHandler())
 		api.POST("/trades", controllers.ExecuteTradeHandler(hub, db.Client))
 
+		api.GET("/round/status", roundController.GetRoundStatus)
+		api.POST("/round/start", roundController.StartRound)
+		api.POST("/round/end", roundController.EndRound)
+		api.POST("/round/join", roundController.JoinRound)
+		api.POST("/round/update", roundController.UpdatePortfolio)
+
+		// Note: StartRound and EndRound are now managed by RoundManager
+		// You can still provide endpoints to manually control rounds if desired
+		// For example:
+		api.POST("/round/start_manual", func(c *gin.Context) {
+			roundManager.StartNextRound()
+			c.JSON(http.StatusOK, gin.H{"message": "manual round start triggered"})
+		})
+		api.POST("/round/end_manual", func(c *gin.Context) {
+			roundManager.EndRound()
+			c.JSON(http.StatusOK, gin.H{"message": "manual round end triggered"})
+		})
+
 	}
 	routes.TradeRoutes(r)
 	routes.PortfolioRoutes(r)
 	routes.RoundRoutes(r)
+
+	roundManager.Start()
 
 	port := os.Getenv("PORT")
 	if port == "" {

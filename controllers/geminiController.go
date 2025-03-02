@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,14 +17,6 @@ import (
 	"midnight-trader/models"
 )
 
-var geminiApiKey string
-
-func InitAI() {
-	geminiApiKey = os.Getenv("GEMINI_API_KEY")
-	if geminiApiKey == "" {
-		log.Fatal("gemini_api_key not set in environment")
-	}
-}
 func extractAIResponse(result map[string]interface{}) (string, error) {
 	candidates, ok := result["candidates"].([]interface{})
 	if !ok || len(candidates) == 0 {
@@ -65,7 +56,7 @@ func GenerateCompanies(c *gin.Context) {
 	defer cancel()
 
 	// drop old companies
-	if err := companyCollection.Drop(ctx); err != nil {
+	if err := CompanyCollection.Drop(ctx); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to drop existing companies: " + err.Error()})
 		return
 	}
@@ -166,7 +157,7 @@ format the response as a json array of objects. each object should have the keys
 		companyDocs[i] = company
 	}
 
-	_, err = companyCollection.InsertMany(ctx, companyDocs)
+	_, err = CompanyCollection.InsertMany(ctx, companyDocs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to insert companies: " + err.Error()})
 		return
@@ -182,7 +173,7 @@ func GenerateHistoricalData(hub *models.Hub) gin.HandlerFunc {
 
 		// fetch existing companies from mongo
 		var companies []models.Company
-		cursor, err := companyCollection.Find(ctx, bson.M{})
+		cursor, err := CompanyCollection.Find(ctx, bson.M{})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch companies: " + err.Error()})
 			return
@@ -291,7 +282,7 @@ here's the companies data: %s`, string(companiesData))
 					"stockPrice":            latestPrice,
 				},
 			}
-			res, err := companyCollection.UpdateOne(ctx, filter, update)
+			res, err := CompanyCollection.UpdateOne(ctx, filter, update)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update company " + ticker + ": " + err.Error()})
 				return
@@ -312,7 +303,7 @@ func AppendGeneratedHistoricalData(hub *models.Hub) gin.HandlerFunc {
 
 		// fetch existing companies from mongo
 		var companies []models.Company
-		cursor, err := companyCollection.Find(ctx, bson.M{})
+		cursor, err := CompanyCollection.Find(ctx, bson.M{})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch companies: " + err.Error()})
 			return
@@ -414,7 +405,7 @@ func AppendGeneratedHistoricalData(hub *models.Hub) gin.HandlerFunc {
 					"stockPrice": latestAppendedPrice,
 				},
 			}
-			res, err := companyCollection.UpdateOne(ctx, filter, update)
+			res, err := CompanyCollection.UpdateOne(ctx, filter, update)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update company " + ticker + ": " + err.Error()})
 				return

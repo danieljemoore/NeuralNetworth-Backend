@@ -9,21 +9,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var companyCollection *mongo.Collection
-
-func SetCompanyCollection(db *mongo.Database) {
-	companyCollection = db.Collection("companies")
-}
 
 func GetCompanies(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var companies []models.Company
-	cursor, err := companyCollection.Find(ctx, bson.M{})
+	cursor, err := CompanyCollection.Find(ctx, bson.M{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -43,7 +36,7 @@ func GetCompaniesHandler(c *gin.Context) {
 	defer cancel()
 
 	var companies []models.Company
-	cursor, err := companyCollection.Find(ctx, bson.M{})
+	cursor, err := CompanyCollection.Find(ctx, bson.M{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -63,7 +56,7 @@ func ClearData(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := companyCollection.Drop(ctx)
+	err := CompanyCollection.Drop(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear companies"})
 		return
@@ -75,7 +68,7 @@ func ClearData(c *gin.Context) {
 		return
 	}
 
-	err = portfolioCollection.Drop(ctx)
+	err = PortfolioCollection.Drop(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear portfolios"})
 		return

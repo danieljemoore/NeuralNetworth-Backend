@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -56,6 +57,30 @@ func ServeWs(h *models.Hub, w http.ResponseWriter, r *http.Request) {
 	// Start read and write pumps
 	go client.WritePump()
 	go client.ReadPump(h)
+	// Send the current round state to the newly connected client
+	go func() {
+		currentRound := controllers.GetCurrentRound()
+		if currentRound != nil {
+			roundData, err := json.Marshal(currentRound)
+			if err != nil {
+				log.Println("Error marshalling currentRound:", err)
+				return
+			}
+
+			wsMessage := models.WSMessage{
+				Event: "current_round",
+				Data:  json.RawMessage(roundData),
+			}
+			client.Send <- wsMessage
+		} else {
+			wsMessage := models.WSMessage{
+				Event: "no_active_round",
+				Data:  json.RawMessage(`{}`),
+			}
+			client.Send <- wsMessage
+		}
+	}()
+
 	// Fetch and send all portfolios upon connection
 	go func() {
 		// Create a context with a timeout to avoid hanging
