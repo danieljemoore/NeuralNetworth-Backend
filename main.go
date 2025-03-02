@@ -95,7 +95,10 @@ func main() {
 	if port == "" {
 		port = "5001"
 	}
-
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 	log.Println("Server running on port", port)
 	r.Run(":" + port)
 }
